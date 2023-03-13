@@ -10,10 +10,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/Krisnaputra15/gsc-solution/config"
-	"github.com/Krisnaputra15/gsc-solution/db"
-	"github.com/Krisnaputra15/gsc-solution/entity"
-	"github.com/Krisnaputra15/gsc-solution/model"
+	"HealthStep/config"
+	"HealthStep/entity"
+	"HealthStep/model"
+
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
 )
@@ -37,7 +37,7 @@ func GoogleLogin(c echo.Context) error {
 func GoogleCallback(c echo.Context) error {
 	oauthState, _ := c.Cookie("oauthstate")
 	if c.FormValue("state") != oauthState.Value {
-		log.Println("invalid oauth google state")
+		log.Println("invalid oauth google state", c.FormValue("state"))
 		return c.Redirect(http.StatusTemporaryRedirect, "http://localhost:8000/")
 	}
 
@@ -84,14 +84,14 @@ func GetUserDataFromGoogle(code string) ([]byte, error) {
 func SignInUser(userDetail entity.User) ([]byte, error) {
 	var user model.User
 	var userData UserData
-	db.DB.First(&user, "email = ?", userDetail.Email)
+
 	if len(user.Email) == 0 {
 		createUser, err := model.UserCreate(userDetail)
 		if err != nil {
 			return nil, err
 		}
 
-		createUserProfile, err := model.UserProfileCreate(userDetail)
+		createUserProfile, err := model.UserProfileCreate(userDetail, createUser.ID)
 		if err != nil {
 			return nil, err
 		}

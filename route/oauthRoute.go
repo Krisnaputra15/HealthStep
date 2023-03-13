@@ -1,7 +1,8 @@
 package route
 
 import (
-	"github.com/Krisnaputra15/gsc-solution/controller"
+	"HealthStep/controller"
+
 	"github.com/labstack/echo/v4"
 )
 

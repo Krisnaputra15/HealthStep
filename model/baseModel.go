@@ -14,7 +14,7 @@ type Base struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func (base *Base) beforeCreate(tx *gorm.DB) (err error) {
+func (base *Base) BeforeCreate(tx *gorm.DB) (err error) {
 	base.ID = uuid.New()
 
 	if err != nil {

@@ -1,8 +1,8 @@
 package model
 
 import (
-	"github.com/Krisnaputra15/gsc-solution/db"
-	"github.com/Krisnaputra15/gsc-solution/entity"
+	"HealthStep/db"
+	"HealthStep/entity"
 )
 
 type UserProfile struct {
@@ -23,22 +23,27 @@ type APIUserProfile struct {
 	Longitude   float64 `json:"longitude"`
 }
 
-func UserProfileCreate(userDetail entity.User) (APIUserProfile, error) {
+func UserProfileCreate(userDetail entity.User, id string) (APIUserProfile, error) {
 	var userProfile APIUserProfile
 
-	createUserProfile := UserProfile{
-		UserID: userDetail.ID,
-		HealthPoint: 0,
-		IsVolunteer: false,
-		Latitude: 0,
-		Longitude: 0,
+	// Check if the user exists
+	var user entity.User
+	if err := db.DB.First(&user, "id = ?", id).Error; err != nil {
+		return userProfile, err
 	}
 
-	resultCreate := db.DB.Create(&createUserProfile)
-	if resultCreate.Error != nil {
-		return userProfile, resultCreate.Error
+	// Create user profile
+	createUserProfile := UserProfile{
+		UserID:      id,
+		HealthPoint: 0,
+		IsVolunteer: false,
+		Latitude:    0,
+		Longitude:   0,
 	}
-	db.DB.Model(&userProfile).First(&userProfile, "user_id = ?", createUserProfile.UserID)
+
+	if err := db.DB.Create(&createUserProfile).Error; err != nil {
+		return userProfile, err
+	}
 
 	return userProfile, nil
 }
