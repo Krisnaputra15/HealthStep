@@ -25,6 +25,10 @@ func GenerateOauthCookie(c echo.Context) string {
 	return state
 }
 
+func GenerateAuthorizationCookie(c echo.Context, id string) {
+	
+}
+
 // func GenerateAuthorizationCookie(c echo.Context) error {
 
 // }

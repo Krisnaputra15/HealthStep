@@ -2,15 +2,31 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/Krisnaputra15/gsc-solution/config"
+	"github.com/Krisnaputra15/gsc-solution/db"
 	"github.com/Krisnaputra15/gsc-solution/entity"
+	"github.com/Krisnaputra15/gsc-solution/model"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
 )
+
+type UserData struct {
+	User        model.APIUser
+	UserProfile model.APIUserProfile
+}
+
+type UserReturn struct {
+	User  UserData
+	Token string
+}
 
 func GoogleLogin(c echo.Context) error {
 	state := GenerateOauthCookie(c)
@@ -32,10 +48,10 @@ func GoogleCallback(c echo.Context) error {
 	}
 
 	// unmarshalling json
-	// var userDetail entity.User
-	// json.Unmarshal(data, &userDetail)
+	var userReturn UserReturn
+	json.Unmarshal(data, &userReturn)
 
-	return c.JSON(http.StatusOK, entity.SetResponse(http.StatusOK, "success retrieving user data", string(data)))
+	return c.JSON(http.StatusOK, entity.SetResponse(http.StatusOK, "login success", userReturn))
 }
 
 func GetUserDataFromGoogle(code string) ([]byte, error) {
@@ -55,5 +71,58 @@ func GetUserDataFromGoogle(code string) ([]byte, error) {
 		return nil, fmt.Errorf("error reading user data: %s", err.Error())
 	}
 
-	return contents, nil
+	var userDetail entity.User
+	json.Unmarshal(contents, &userDetail)
+
+	data, err := SignInUser(userDetail)
+	if err != nil {
+		return nil, fmt.Errorf("error storing user data: %s", err.Error())
+	}
+	return data, nil
+}
+
+func SignInUser(userDetail entity.User) ([]byte, error) {
+	var user model.User
+	var userData UserData
+	db.DB.First(&user, "email = ?", userDetail.Email)
+	if len(user.Email) == 0 {
+		createUser, err := model.UserCreate(userDetail)
+		if err != nil {
+			return nil, err
+		}
+
+		createUserProfile, err := model.UserProfileCreate(userDetail)
+		if err != nil {
+			return nil, err
+		}
+
+		userData.User = createUser
+		userData.UserProfile = createUserProfile
+	}
+
+	// create claims for jwt from authenticated user
+	claims := &jwt.RegisteredClaims{
+		ID:        userData.User.ID,
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
+	}
+
+	// create token with claims
+	rawToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// generate encoded token and send it along with response
+	token, err := rawToken.SignedString([]byte(os.Getenv("SECRET")))
+	if err != nil {
+		return nil, err
+	}
+
+	data := map[string]interface{}{
+		"user_data": userData,
+		"token":     token,
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+	return jsonData, nil
 }

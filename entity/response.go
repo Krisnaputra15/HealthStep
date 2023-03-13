@@ -6,6 +6,11 @@ type Response struct {
 	Pagination *ResponsePagination `json:"pagination,omitempty"`
 }
 
+type ErrorResponse struct {
+	Status Status `json:"status"`
+	Error string `json:"error"`
+}
+
 type TokenResponse struct {
 	Status       Status `json:"status"`
 	Token        string `json:"token"`
@@ -27,6 +32,18 @@ func SetResponse(code int, message string, data interface{}) *Response {
 		},
 		Data: data,
 	}
+	return res
+}
+
+func SetErrorResponse(code int, message string, err string) *ErrorResponse {
+	res := &ErrorResponse{
+		Status: Status{
+			Code: code,
+			Message: message,
+		},
+		Error: err,
+	}
+
 	return res
 }
 

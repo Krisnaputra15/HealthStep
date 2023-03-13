@@ -19,10 +19,8 @@ func LoadOauth2Config() {
 		Scopes: []string{
 			"https://www.googleapis.com/auth/userinfo.email",
 			"https://www.googleapis.com/auth/userinfo.profile",
-			"https://www.googleapis.com/auth/user.birthday.read",
-			"https://www.googleapis.com/auth/user.gender.read",
-			"https://www.googleapis.com/auth/user.addresses.read",
 		},
 		Endpoint: google.Endpoint,
+
 	}
 }
