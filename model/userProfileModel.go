@@ -26,6 +26,12 @@ type APIUserProfile struct {
 func UserProfileCreate(userDetail entity.User) (APIUserProfile, error) {
 	var userProfile APIUserProfile
 
+	// Check if the user exists
+	var user entity.User
+	if err := db.DB.First(&user, "user_id = ?", userDetail.ID).Error; err != nil {
+		return userProfile, err
+	}
+
 	createUserProfile := UserProfile{
 		UserID: userDetail.ID,
 		HealthPoint: 0,
@@ -34,11 +40,9 @@ func UserProfileCreate(userDetail entity.User) (APIUserProfile, error) {
 		Longitude: 0,
 	}
 
-	resultCreate := db.DB.Create(&createUserProfile)
-	if resultCreate.Error != nil {
-		return userProfile, resultCreate.Error
+	if err := db.DB.Create(&createUserProfile).Error; err != nil {
+		return userProfile, err
 	}
-	db.DB.Model(&userProfile).First(&userProfile, "user_id = ?", createUserProfile.UserID)
 
 	return userProfile, nil
 }

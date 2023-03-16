@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/Krisnaputra15/gsc-solution/config"
-	"github.com/Krisnaputra15/gsc-solution/db"
 	"github.com/Krisnaputra15/gsc-solution/entity"
 	"github.com/Krisnaputra15/gsc-solution/model"
 	"github.com/golang-jwt/jwt/v4"
@@ -37,7 +36,7 @@ func GoogleLogin(c echo.Context) error {
 func GoogleCallback(c echo.Context) error {
 	oauthState, _ := c.Cookie("oauthstate")
 	if c.FormValue("state") != oauthState.Value {
-		log.Println("invalid oauth google state")
+		log.Println("invalid oauth google state", c.FormValue("state"))
 		return c.Redirect(http.StatusTemporaryRedirect, "http://localhost:8000/")
 	}
 
@@ -47,11 +46,20 @@ func GoogleCallback(c echo.Context) error {
 		return c.Redirect(http.StatusTemporaryRedirect, "http://localhost:8000/")
 	}
 
-	// unmarshalling json
-	var userReturn UserReturn
-	json.Unmarshal(data, &userReturn)
+	// unmarshalling json from google
+	var userDetail entity.User
+	json.Unmarshal(data, &userDetail)
 
-	return c.JSON(http.StatusOK, entity.SetResponse(http.StatusOK, "login success", userReturn))
+	userData, err := SignInUser(userDetail)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, entity.SetErrorResponse(http.StatusBadRequest, "error", err.Error()))
+	}
+
+	// unmarshalling json from SignInUser
+	var userReturn UserReturn
+	json.Unmarshal(userData, &userReturn)
+
+	return c.JSON(http.StatusOK, entity.SetResponse(http.StatusOK, "login success", userDetail))
 }
 
 func GetUserDataFromGoogle(code string) ([]byte, error) {
@@ -71,20 +79,13 @@ func GetUserDataFromGoogle(code string) ([]byte, error) {
 		return nil, fmt.Errorf("error reading user data: %s", err.Error())
 	}
 
-	var userDetail entity.User
-	json.Unmarshal(contents, &userDetail)
-
-	data, err := SignInUser(userDetail)
-	if err != nil {
-		return nil, fmt.Errorf("error storing user data: %s", err.Error())
-	}
-	return data, nil
+	return contents, nil
 }
 
 func SignInUser(userDetail entity.User) ([]byte, error) {
 	var user model.User
 	var userData UserData
-	db.DB.First(&user, "email = ?", userDetail.Email)
+
 	if len(user.Email) == 0 {
 		createUser, err := model.UserCreate(userDetail)
 		if err != nil {

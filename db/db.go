@@ -12,12 +12,12 @@ import (
 var DB *gorm.DB
 
 func GetMysqlConnectionUrl() string {
-	dbPort := os.Getenv("DB_PORT")
+	dbHost := os.Getenv("DB_HOST")
 	username := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASS")
 	dbName := os.Getenv("DB_NAME")
 
-	mysqlConn := fmt.Sprintf("%s:%s@tcp(127.0.0.1:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", username, password, dbPort, dbName)
+	mysqlConn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", username, password, dbHost, dbName)
 
 	return mysqlConn
 }

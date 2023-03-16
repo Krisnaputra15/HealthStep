@@ -11,6 +11,7 @@ type User struct {
 	Base
 	Username       string    `json:"username" gorm:"uniqueIndex:username"`
 	Email          string    `json:"email" gorm:"uniqueIndex:email"`
+	Password       string    `json:"password"`
 	IsVerified     bool      `json:"is_verified" gorm:"default:false"`
 	Birthdate      time.Time `json:"birthdate"`
 	Gender         string    `json:"gender" gorm:"uniqueIndex"`
@@ -51,6 +52,9 @@ func UserCreate(userDetail entity.User) (APIUser, error) {
 		ProfilePicture: userDetail.Picture,
 		FirstName:      userDetail.GivenName,
 		LastName:       userDetail.FamilyName,
+		Level:          1,
+		Birthdate:      time.Now(),
+		Gender:         "Male",
 	}
 
 	db.DB.Create(&createUser)
